@@ -46,9 +46,11 @@ public:
 
   void PredictCovariance();
 
+  Eigen::MatrixXd CreateAugmentedMatrix();
+
   void CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 
-  VectorXd GetWeights();
+  Eigen::VectorXd GetWeights();
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;

@@ -41,6 +41,11 @@ class UKF {
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
+  void PredictMean();
+
+  void PredictCovariance();
+
+  void CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
@@ -82,7 +87,7 @@ class UKF {
   double std_radphi_;
 
   // Radar measurement noise standard deviation radius change in m/s
-  double std_radrd_ ;
+  double std_radrd_;
 
   // Weights of sigma points
   Eigen::VectorXd weights_;

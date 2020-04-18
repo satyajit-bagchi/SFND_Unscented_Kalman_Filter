@@ -118,10 +118,53 @@ void UKF::Prediction(double delta_t) {
     Xsig_aug.col(col_no + 1) = x_aug + sigma_matrix.col(col_no);
     Xsig_aug.col(col_no + n_aug_ + 1) = x_aug - sigma_matrix.col(col_no);
   }
+  CreateSigmaPoints(Xsig_aug, delta_t);
 
   // Predict Mean and Covariance
-  // create matrix with predicted sigma points as columns
-  // predict sigma points
+  // Predict Mean
+  PredictMean();
+  PredictCovariance();
+}
+
+void UKF::PredictMean() {
+  // Predict Mean
+  VectorXd weights = VectorXd(2 * n_aug_ + 1);
+  double w_major = lambda_ / (lambda_ + n_aug_);
+  double w_minor = 0.5 / (lambda_ + n_aug_);
+
+  weights.fill(w_minor);
+  weights(0) = w_major;
+
+  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no) {
+    x_ = x_ + (weights(col_no) * Xsig_pred_.col(col_no));
+  }
+}
+
+void UKF::PredictCovariance() {
+  // Predict Mean
+  VectorXd weights = VectorXd(2 * n_aug_ + 1);
+  double w_major = lambda_ / (lambda_ + n_aug_);
+  double w_minor = 0.5 / (lambda_ + n_aug_);
+
+  weights.fill(w_minor);
+  weights(0) = w_major;
+
+  // predict state covariance matrix
+  P_.fill(0.0);  // TODO Is this right?
+  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no) {
+    VectorXd residual = Xsig_pred_.col(col_no) - x_;
+    // angle normalization
+    while (residual(3) > M_PI) {
+      residual(3) -= 2. * M_PI;
+    }
+    while (residual(3) < -M_PI) {
+      residual(3) += 2. * M_PI;
+    }
+    P_ = P_ + (weights(col_no) * (residual * residual.transpose()));
+  }
+}
+
+void UKF::CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t) {
   for (int col_no = 0; col_no < Xsig_aug.cols(); ++col_no) {
     double p_x = Xsig_aug(0, col_no);
     double p_y = Xsig_aug(1, col_no);
@@ -151,32 +194,6 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_(3, col_no) =
         psi + psi_dot * delta_t + 0.5 * delta_t * delta_t * nu_dot_dot;
     Xsig_pred_(4, col_no) = psi_dot + delta_t * nu_dot_dot;
-  }
-
-  // Predict Mean
-  VectorXd weights = VectorXd(2 * n_aug_ + 1);
-  double w_major = lambda_ / (lambda_ + n_aug_);
-  double w_minor = 0.5 / (lambda_ + n_aug_);
-
-  weights.fill(w_minor);
-  weights(0) = w_major;
-
-  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no) {
-    x_ = x_ + (weights(col_no) * Xsig_pred_.col(col_no));
-  }
-
-  // predict state covariance matrix
-  P_.fill(0.0);  // TODO Is this right?
-  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no) {
-    VectorXd residual = Xsig_pred_.col(col_no) - x_;
-    // angle normalization
-    while (residual(3) > M_PI) {
-      residual(3) -= 2. * M_PI;
-    }
-    while (residual(3) < -M_PI) {
-      residual(3) += 2. * M_PI;
-    }
-    P_ = P_ + (weights(col_no) * (residual * residual.transpose()));
   }
 }
 

@@ -139,13 +139,7 @@ Eigen::MatrixXd UKF::CreateAugmentedMatrix()
 void UKF::PredictMean()
 {
   // Predict Mean
-  VectorXd weights = VectorXd(2 * n_aug_ + 1);
-  double w_major = lambda_ / (lambda_ + n_aug_);
-  double w_minor = 0.5 / (lambda_ + n_aug_);
-
-  weights.fill(w_minor);
-  weights(0) = w_major;
-
+  VectorXd weights = GetWeights();
   for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
   {
     x_ = x_ + (weights(col_no) * Xsig_pred_.col(col_no));
@@ -166,12 +160,7 @@ VectorXd UKF::GetWeights()
 void UKF::PredictCovariance()
 {
   // Predict Mean
-  VectorXd weights = VectorXd(2 * n_aug_ + 1);
-  double w_major = lambda_ / (lambda_ + n_aug_);
-  double w_minor = 0.5 / (lambda_ + n_aug_);
-
-  weights.fill(w_minor);
-  weights(0) = w_major;
+  VectorXd weights = GetWeights();
 
   // predict state covariance matrix
   P_.fill(0.0);  // TODO Is this right?
@@ -275,6 +264,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
   {
     z_pred = z_pred + weights(col_no) * Zsig.col(col_no);
   }
+  std::cout << z_pred << std::endl << std::endl;
 
   // calculate innovation covariance matrix S
   S.fill(0.0);
@@ -290,20 +280,17 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
   }
   S = S + R;
 
+  std::cout << S << std::endl << std::endl;
+
   // Update state
   // create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
 
-  // /**
-  //  * Student part begin
-  //  */
-
   Tc.fill(0.0);
-  // calculate cross correlation matrix
-  Eigen::MatrixXd X_sig_pred_ss = Xsig_pred_.block(0, 0, 4, 14);  // TODO remove hardcode
+  // // calculate cross correlation matrix
   for (int col_no = 0; col_no < Zsig.cols(); ++col_no)
   {
-    VectorXd state_residual = X_sig_pred_ss.col(col_no) - x_;
+    VectorXd state_residual = Xsig_pred_.col(col_no) - x_;
     VectorXd measurement_residual = Zsig.col(col_no) - z_pred;
     Tc = Tc + weights(col_no) * (state_residual * measurement_residual.transpose());
   }

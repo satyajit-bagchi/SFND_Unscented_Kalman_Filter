@@ -13,6 +13,10 @@ public:
   {
     ukf.std_a_ = 0.2;
     ukf.std_yawdd_ = 0.2;
+
+    ukf.std_radr_ = 0.3;
+    ukf.std_radphi_ = 0.0175;
+    ukf.std_radrd_ = 0.1;
   }
 };
 
@@ -122,6 +126,30 @@ TEST_F(UKFTest, TestPredictCovariance)
       0.00791091, 0.00341576, 0.0014923, 0.00580129, 0.000778632, 0.000792973, -0.00348196, 0.00980182, 0.000778632,
       0.0119238, 0.0112491, -0.00299378, 0.00791091, 0.000792973, 0.0112491, 0.0126972;
   EXPECT_TRUE(ukf.P_.isApprox(covar, 1e-2));
+}
+
+TEST_F(UKFTest, TestUpdateRadar)
+{
+  // set state dimension
+  int n_x = 5;
+
+  // set augmented dimension
+  int n_aug = 7;
+
+  // set measurement dimension, radar can measure r, phi, and r_dot
+  int n_z = 3;
+
+  ukf.Xsig_pred_ << 5.9374, 6.0640, 5.925, 5.9436, 5.9266, 5.9374, 5.9389, 5.9374, 5.8106, 5.9457, 5.9310, 5.9465,
+      5.9374, 5.9359, 5.93744, 1.48, 1.4436, 1.660, 1.4934, 1.5036, 1.48, 1.4868, 1.48, 1.5271, 1.3104, 1.4787, 1.4674,
+      1.48, 1.4851, 1.486, 2.204, 2.2841, 2.2455, 2.2958, 2.204, 2.204, 2.2395, 2.204, 2.1256, 2.1642, 2.1139, 2.204,
+      2.204, 2.1702, 2.2049, 0.5367, 0.47338, 0.67809, 0.55455, 0.64364, 0.54337, 0.5367, 0.53851, 0.60017, 0.39546,
+      0.51900, 0.42991, 0.530188, 0.5367, 0.535048, 0.352, 0.29997, 0.46212, 0.37633, 0.4841, 0.41872, 0.352, 0.38744,
+      0.40562, 0.24347, 0.32926, 0.2214, 0.28687, 0.352, 0.318159;
+
+  Eigen::MatrixXd random_measurement(3, 1);
+  MeasurementPackage random_package;
+  random_package.raw_measurements_ = random_measurement;
+  ukf.UpdateRadar(random_package);
 }
 
 int main(int argc, char** argv)

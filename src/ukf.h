@@ -48,7 +48,7 @@ public:
 
   Eigen::MatrixXd CreateAugmentedMatrix();
 
-  void CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
+  void PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 
   Eigen::VectorXd GetWeights();
 

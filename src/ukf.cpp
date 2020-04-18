@@ -95,7 +95,7 @@ void UKF::Prediction(double delta_t)
    * and the state covariance matrix.
    */
   Eigen::MatrixXd Xsig_aug = CreateAugmentedMatrix();
-  CreateSigmaPoints(Xsig_aug, delta_t);
+  PropagateSigmaPoints(Xsig_aug, delta_t);
 
   // Predict Mean and Covariance
   // Predict Mean
@@ -191,7 +191,7 @@ void UKF::PredictCovariance()
   }
 }
 
-void UKF::CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
+void UKF::PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
 {
   for (int col_no = 0; col_no < Xsig_aug.cols(); ++col_no)
   {
@@ -300,8 +300,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
 
   Tc.fill(0.0);
   // calculate cross correlation matrix
-  std::cout << Xsig_pred_ << std::endl;
-  // Eigen::MatrixXd X_sig_pred_ss = Xsig_pred_.block(0, 0, 4, 14);  // TODO remove hardcode
+  Eigen::MatrixXd X_sig_pred_ss = Xsig_pred_.block(0, 0, 4, 14);  // TODO remove hardcode
   for (int col_no = 0; col_no < Zsig.cols(); ++col_no)
   {
     VectorXd state_residual = X_sig_pred_ss.col(col_no) - x_;

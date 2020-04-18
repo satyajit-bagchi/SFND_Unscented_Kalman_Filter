@@ -49,6 +49,7 @@ public:
   Eigen::VectorXd CalculatePredictedMeasurement(Eigen::MatrixXd Zsig);
 
   Eigen::MatrixXd CalculateMeasurementSigmaPoints();
+
   Eigen::MatrixXd CreateAugmentedMatrix();
 
   void InitializeLidarMatrices(MeasurementPackage measurement);
@@ -57,7 +58,7 @@ public:
 
   void PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 
-  Eigen::VectorXd GetWeights();
+  void CalculateWeights();
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;

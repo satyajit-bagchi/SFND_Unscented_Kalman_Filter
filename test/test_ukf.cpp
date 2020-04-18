@@ -25,11 +25,11 @@ TEST(TestUKF, TestInit)
   UKF ukf;
 }
 
-TEST_F(UKFTest, GetWeights)
+TEST_F(UKFTest, TestCalculateWeights)
 {
-  Eigen::VectorXd weights = ukf.GetWeights();
-  ASSERT_EQ(weights.size(), 15);
-  ASSERT_EQ(weights(1), weights(2));
+  ukf.CalculateWeights();
+  ASSERT_EQ(ukf.weights_.size(), 15);
+  ASSERT_EQ(ukf.weights_(1), ukf.weights_(2));
 }
 
 TEST_F(UKFTest, TestCreateAugmentedMatrix)
@@ -174,7 +174,7 @@ TEST_F(UKFTest, TestUpdateRadar)
 
 TEST_F(UKFTest, TestCalculatePredictedMeasurement)
 {
-  // Coupled Test. Finds ZSig, then calculates z_pred
+  // Coupled Test. Tests CalculateMeasurementSigmaPoints. Finds ZSig, then calculates z_pred
 
   ukf.Xsig_pred_ << 5.9374, 6.0640, 5.925, 5.9436, 5.9266, 5.9374, 5.9389, 5.9374, 5.8106, 5.9457, 5.9310, 5.9465,
       5.9374, 5.9359, 5.93744, 1.48, 1.4436, 1.660, 1.4934, 1.5036, 1.48, 1.4868, 1.48, 1.5271, 1.3104, 1.4787, 1.4674,

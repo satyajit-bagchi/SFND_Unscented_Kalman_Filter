@@ -46,7 +46,14 @@ public:
 
   void PredictCovariance();
 
+  Eigen::VectorXd CalculatePredictedMeasurement(Eigen::MatrixXd Zsig);
+
+  Eigen::MatrixXd CalculateMeasurementSigmaPoints();
   Eigen::MatrixXd CreateAugmentedMatrix();
+
+  void InitializeLidarMatrices(MeasurementPackage measurement);
+
+  void InitializeRadarMatrices(MeasurementPackage measurement);
 
   void PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 

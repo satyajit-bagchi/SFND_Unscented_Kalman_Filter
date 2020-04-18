@@ -48,6 +48,8 @@ public:
 
   void CreateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t);
 
+  VectorXd GetWeights();
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 

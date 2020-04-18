@@ -150,6 +150,17 @@ void UKF::PredictMean()
   }
 }
 
+VectorXd UKF::GetWeights()
+{
+  VectorXd weights = VectorXd(2 * n_aug_ + 1);
+  double w_major = lambda_ / (lambda_ + n_aug_);
+  double w_minor = 0.5 / (lambda_ + n_aug_);
+
+  weights.fill(w_minor);
+  weights(0) = w_major;
+  return weights;
+}
+
 void UKF::PredictCovariance()
 {
   // Predict Mean
@@ -229,4 +240,50 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
    * covariance, P_.
    * You can also calculate the radar NIS, if desired.
    */
+
+  int n_z = 3;
+  // create matrix for sigma points in measurement space
+  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
+
+  // mean predicted measurement
+  VectorXd z_pred = VectorXd(n_z);
+
+  // measurement covariance matrix S
+  MatrixXd S = MatrixXd(n_z, n_z);
+
+  auto weights = GetWeights();
+
+  // transform sigma points into measurement space
+  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
+  {
+    double px = Xsig_pred_(0, col_no);
+    double py = Xsig_pred_(1, col_no);
+    double v = Xsig_pred_(2, col_no);
+    double psi = Xsig_pred_(3, col_no);
+
+    Zsig(0, col_no) = std::sqrt(px * px + py * py);
+    Zsig(1, col_no) = std::atan(py / px);
+    Zsig(2, col_no) = (px * std::cos(psi) * v + py * std::sin(psi) * v) / (std::sqrt(px * px + py * py));
+  }
+
+  // calculate mean predicted measurement
+  z_pred.fill(0.0);
+  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
+  {
+    z_pred = z_pred + weights(col_no) * Zsig.col(col_no);
+  }
+
+  // calculate innovation covariance matrix S
+  S.fill(0.0);
+  MatrixXd R(n_z, n_z);
+  R.fill(0.0);
+  R(0, 0) = std_radr_ * std_radr_;
+  R(1, 1) = std_radphi_ * std_radphi_;
+  R(2, 2) = std_radrd_ * std_radrd_;
+  for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
+  {
+    VectorXd residual = Zsig.col(col_no) - z_pred;
+    S = S + weights(col_no) * (residual * residual.transpose());
+  }
+  S = S + R;
 }

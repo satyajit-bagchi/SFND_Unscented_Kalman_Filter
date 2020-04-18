@@ -146,10 +146,31 @@ TEST_F(UKFTest, TestUpdateRadar)
       0.51900, 0.42991, 0.530188, 0.5367, 0.535048, 0.352, 0.29997, 0.46212, 0.37633, 0.4841, 0.41872, 0.352, 0.38744,
       0.40562, 0.24347, 0.32926, 0.2214, 0.28687, 0.352, 0.318159;
 
-  Eigen::MatrixXd random_measurement(3, 1);
-  MeasurementPackage random_package;
-  random_package.raw_measurements_ = random_measurement;
-  ukf.UpdateRadar(random_package);
+  ukf.x_ << 5.93637, 1.49035, 2.20528, 0.536853, 0.353577;
+
+  ukf.P_ << 0.0054342, -0.002405, 0.0034157, -0.0034819, -0.00299378, -0.002405, 0.01084, 0.001492, 0.0098018,
+      0.00791091, 0.0034157, 0.001492, 0.0058012, 0.00077863, 0.000792973, -0.0034819, 0.0098018, 0.00077863, 0.011923,
+      0.0112491, -0.0029937, 0.0079109, 0.00079297, 0.011249, 0.0126972;
+
+  Eigen::MatrixXd radar_measurement(3, 1);
+  radar_measurement << 5.9214,  // rho in m
+      0.2187,                   // phi in rad
+      2.0062;
+  MeasurementPackage meas_package;
+  meas_package.raw_measurements_ = radar_measurement;
+  ukf.UpdateRadar(meas_package);
+
+  Eigen::MatrixXd expected_x(5, 1);
+  expected_x << 5.92276, 1.41823, 2.15593, 0.489274, 0.321338;
+
+  Eigen::MatrixXd expected_P(5, 5);
+  expected_P << 0.00361579, -0.000357881, 0.00208316, -0.000937196, -0.00071727, -0.000357881, 0.00539867, 0.00156846,
+      0.00455342, 0.00358885, 0.00208316, 0.00156846, 0.00410651, 0.00160333, 0.00171811, -0.000937196, 0.00455342,
+      0.00160333, 0.00652634, 0.00669436, -0.00071719, 0.00358884, 0.00171811, 0.00669426, 0.00881797;
+
+  EXPECT_TRUE(ukf.x_.isApprox(expected_x, 1e-4));
+  //   EXPECT_TRUE(ukf.P_.isApprox(expected_P, 1e-4));
+  // Verified: z_pred, Tc, K
 }
 
 int main(int argc, char** argv)

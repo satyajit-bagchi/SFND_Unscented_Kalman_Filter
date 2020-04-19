@@ -60,6 +60,8 @@ public:
 
   void CalculateWeights();
 
+  void SquashAngle(double& angle);
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 

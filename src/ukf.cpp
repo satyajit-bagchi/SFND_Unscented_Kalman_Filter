@@ -229,46 +229,50 @@ void UKF::PredictCovariance()
 
 void UKF::PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
 {
-  for (int col_no = 0; col_no < Xsig_aug.cols(); ++col_no)
+  for (int i = 0; i < Xsig_aug.cols(); ++i)
   {
-    double p_x = Xsig_aug(0, col_no);
-    double p_y = Xsig_aug(1, col_no);
-    double v = Xsig_aug(2, col_no);
-    double psi = Xsig_aug(3, col_no);
-    double psi_dot = Xsig_aug(4, col_no);
-    double nu = Xsig_aug(5, col_no);
-    double nu_dot_dot = Xsig_aug(6, col_no);
+    // extract values for better readability
+    double p_x = Xsig_aug(0, i);
+    double p_y = Xsig_aug(1, i);
+    double v = Xsig_aug(2, i);
+    double yaw = Xsig_aug(3, i);
+    double yawd = Xsig_aug(4, i);
+    double nu_a = Xsig_aug(5, i);
+    double nu_yawdd = Xsig_aug(6, i);
 
-    double px_pred{ 0.0 };
-    double py_pred{ 0.0 };
+    // predicted state values
+    double px_p, py_p;
 
-    if (fabs(psi_dot) < 0.001)
+    // avoid division by zero
+    if (fabs(yawd) > 0.001)
     {
-      px_pred = p_x + v * std::cos(psi) * delta_t;
-      py_pred = p_y + v * std::sin(psi) * delta_t;
+      px_p = p_x + v / yawd * (sin(yaw + yawd * delta_t) - sin(yaw));
+      py_p = p_y + v / yawd * (cos(yaw) - cos(yaw + yawd * delta_t));
     }
     else
     {
-      double factor = v / psi_dot;
-      double predicted_psi = psi + psi_dot * delta_t;
-      px_pred = p_x + factor * (std::sin(predicted_psi) - std::sin(psi)) + 0.5 * delta_t * delta_t * std::cos(psi) * nu;
-      py_pred = p_y - factor * (std::cos(predicted_psi) + std::cos(psi)) + 0.5 * delta_t * delta_t * std::sin(psi) * nu;
+      px_p = p_x + v * delta_t * cos(yaw);
+      py_p = p_y + v * delta_t * sin(yaw);
     }
-    px_pred += 0.5 * delta_t * delta_t * std::cos(psi) * nu;
-    py_pred += 0.5 * delta_t * delta_t * std::sin(psi) * nu;
 
-    double v_pred{ 0.0 };
-    double psi_pred{ 0.0 };
-    double psi_dot_pred{ 0.0 };
-    v_pred = v + 0 + delta_t * nu;
-    psi_pred = psi + psi_dot * delta_t + 0.5 * delta_t * delta_t * nu_dot_dot;
-    psi_dot_pred = psi_dot + delta_t * nu_dot_dot;
+    double v_p = v;
+    double yaw_p = yaw + yawd * delta_t;
+    double yawd_p = yawd;
 
-    Xsig_pred_(0, col_no) = px_pred;
-    Xsig_pred_(1, col_no) = py_pred;
-    Xsig_pred_(2, col_no) = v_pred;
-    Xsig_pred_(3, col_no) = psi_pred;
-    Xsig_pred_(4, col_no) = psi_dot_pred;
+    // add noise
+    px_p = px_p + 0.5 * nu_a * delta_t * delta_t * cos(yaw);
+    py_p = py_p + 0.5 * nu_a * delta_t * delta_t * sin(yaw);
+    v_p = v_p + nu_a * delta_t;
+
+    yaw_p = yaw_p + 0.5 * nu_yawdd * delta_t * delta_t;
+    yawd_p = yawd_p + nu_yawdd * delta_t;
+
+    // write predicted sigma point into right column
+    Xsig_pred_(0, i) = px_p;
+    Xsig_pred_(1, i) = py_p;
+    Xsig_pred_(2, i) = v_p;
+    Xsig_pred_(3, i) = yaw_p;
+    Xsig_pred_(4, i) = yawd_p;
   }
 }
 

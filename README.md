@@ -5,7 +5,7 @@ Sensor Fusion UKF Highway Project
 
 This project implements an Unscented Kalman Filter using C++ to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. 
 
-The main program can be built and ran by doing the following from the project top directory.
+The main program can be built and run by doing the following from the project top directory.
 
 1. mkdir build
 2. cd build

@@ -55,16 +55,15 @@ UKF::UKF()
    * TODO: Complete the initialization. See ukf.h for other member properties.
    * Hint: one or more values initialized above might be wildly off...
    */
+
+  is_initialized_ = false;
   n_x_ = 5;
 
   n_aug_ = n_x_ + 2;
   lambda_ = 3 - n_aug_;
   int num_sigma_points = 2 * n_aug_ + 1;
 
-  time_us_ = 0;
-
   Xsig_pred_ = MatrixXd(n_x_, num_sigma_points);
-
   CalculateWeights();
 }
 
@@ -177,7 +176,6 @@ Eigen::MatrixXd UKF::CreateAugmentedMatrix()
   x_aug(5) = 0;
   x_aug(6) = 0;
 
-  // create augmented covariance matrix
   P_aug.fill(0.0);
   P_aug.topLeftCorner(5, 5) = P_;
   P_aug(5, 5) = std_a_ * std_a_;
@@ -241,22 +239,36 @@ void UKF::PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
     double nu = Xsig_aug(5, col_no);
     double nu_dot_dot = Xsig_aug(6, col_no);
 
-    if (fabs(psi) < 0.001)
+    double px_pred{ 0.0 };
+    double py_pred{ 0.0 };
+
+    if (fabs(psi_dot) < 0.001)
     {
-      Xsig_pred_(0, col_no) = p_x + v * std::cos(psi) * delta_t + 0.5 * delta_t * delta_t * std::cos(psi) * nu;
-      Xsig_pred_(1, col_no) = p_y + v * std::sin(psi) * delta_t + 0.5 * delta_t * delta_t * std::sin(psi) * nu;
+      px_pred = p_x + v * std::cos(psi) * delta_t;
+      py_pred = p_y + v * std::sin(psi) * delta_t;
     }
     else
     {
       double factor = v / psi_dot;
-      Xsig_pred_(0, col_no) = p_x + factor * (std::sin(psi + psi_dot * delta_t) - std::sin(psi)) +
-                              0.5 * delta_t * delta_t * std::cos(psi) * nu;
-      Xsig_pred_(1, col_no) = p_y + factor * (-std::cos(psi + psi_dot * delta_t) + std::cos(psi)) +
-                              0.5 * delta_t * delta_t * std::sin(psi) * nu;
+      double predicted_psi = psi + psi_dot * delta_t;
+      px_pred = p_x + factor * (std::sin(predicted_psi) - std::sin(psi)) + 0.5 * delta_t * delta_t * std::cos(psi) * nu;
+      py_pred = p_y - factor * (std::cos(predicted_psi) + std::cos(psi)) + 0.5 * delta_t * delta_t * std::sin(psi) * nu;
     }
-    Xsig_pred_(2, col_no) = v + 0 + delta_t * nu;
-    Xsig_pred_(3, col_no) = psi + psi_dot * delta_t + 0.5 * delta_t * delta_t * nu_dot_dot;
-    Xsig_pred_(4, col_no) = psi_dot + delta_t * nu_dot_dot;
+    px_pred += 0.5 * delta_t * delta_t * std::cos(psi) * nu;
+    py_pred += 0.5 * delta_t * delta_t * std::sin(psi) * nu;
+
+    double v_pred{ 0.0 };
+    double psi_pred{ 0.0 };
+    double psi_dot_pred{ 0.0 };
+    v_pred = v + 0 + delta_t * nu;
+    psi_pred = psi + psi_dot * delta_t + 0.5 * delta_t * delta_t * nu_dot_dot;
+    psi_dot_pred = psi_dot + delta_t * nu_dot_dot;
+
+    Xsig_pred_(0, col_no) = px_pred;
+    Xsig_pred_(1, col_no) = py_pred;
+    Xsig_pred_(2, col_no) = v_pred;
+    Xsig_pred_(3, col_no) = psi_pred;
+    Xsig_pred_(4, col_no) = psi_dot_pred;
   }
 }
 

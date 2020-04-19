@@ -63,9 +63,6 @@ UKF::UKF()
 
   time_us_ = 0;
 
-  x_ << 0, 0, 0, 0, 0;
-  P_ << 0.0043, -0.0013, 0.0030, -0.0022, -0.0020, -0.0013, 0.0077, 0.0011, 0.0071, 0.0060, 0.0030, 0.0011, 0.0054,
-      0.0007, 0.0008, -0.0022, 0.0071, 0.0007, 0.0098, 0.0100, -0.0020, 0.0060, 0.0008, 0.0100, 0.0123;
   Xsig_pred_ = MatrixXd(n_x_, num_sigma_points);
 
   CalculateWeights();
@@ -223,14 +220,10 @@ void UKF::CalculateWeights()
 }
 void UKF::PredictCovariance()
 {
-  // Predict Mean
-
-  // predict state covariance matrix
   P_.fill(0.0);
   for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
   {
     VectorXd residual = Xsig_pred_.col(col_no) - x_;
-    // angle normalization
     SquashAngle(residual(3));
     P_ = P_ + (weights_(col_no) * (residual * residual.transpose()));
   }
@@ -248,8 +241,6 @@ void UKF::PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
     double nu = Xsig_aug(5, col_no);
     double nu_dot_dot = Xsig_aug(6, col_no);
 
-    // avoid division by zero
-
     if (fabs(psi) < 0.001)
     {
       Xsig_pred_(0, col_no) = p_x + v * std::cos(psi) * delta_t + 0.5 * delta_t * delta_t * std::cos(psi) * nu;
@@ -266,8 +257,6 @@ void UKF::PropagateSigmaPoints(Eigen::MatrixXd Xsig_aug, double delta_t)
     Xsig_pred_(2, col_no) = v + 0 + delta_t * nu;
     Xsig_pred_(3, col_no) = psi + psi_dot * delta_t + 0.5 * delta_t * delta_t * nu_dot_dot;
     Xsig_pred_(4, col_no) = psi_dot + delta_t * nu_dot_dot;
-
-    // SquashAngle(Xsig_pred_(3, col_no));
   }
 }
 
@@ -281,16 +270,12 @@ void UKF::UpdateLidar(MeasurementPackage meas_package)
    */
   int n_z = 2;
   VectorXd z = meas_package.raw_measurements_;
-  // create matrix for sigma points in measurement space
   MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
 
-  // mean predicted measurement
   VectorXd z_pred = VectorXd(n_z);
 
-  // measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z, n_z);
 
-  // transform sigma points into measurement space
   for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
   {
     double px = Xsig_pred_(0, col_no);
@@ -300,14 +285,12 @@ void UKF::UpdateLidar(MeasurementPackage meas_package)
     Zsig(1, col_no) = py;
   }
 
-  // calculate mean predicted measurement
   z_pred.fill(0.0);
   for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
   {
     z_pred = z_pred + weights_(col_no) * Zsig.col(col_no);
   }
 
-  // calculate innovation covariance matrix S
   S.fill(0.0);
   MatrixXd R(n_z, n_z);
   R.fill(0.0);
@@ -320,25 +303,20 @@ void UKF::UpdateLidar(MeasurementPackage meas_package)
   }
   S = S + R;
 
-  // Update state
-  // create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
 
   Tc.fill(0.0);
-  // // calculate cross correlation matrix
   for (int col_no = 0; col_no < Zsig.cols(); ++col_no)
   {
     VectorXd state_residual = Xsig_pred_.col(col_no) - x_;
     VectorXd measurement_residual = Zsig.col(col_no) - z_pred;
     SquashAngle(state_residual(3));
-    // SquashAngle(measurement_residual(1)); //TODO Check
     Tc = Tc + weights_(col_no) * (state_residual * measurement_residual.transpose());
   }
 
   MatrixXd K = Tc * S.inverse();
 
   VectorXd z_residual = z - z_pred;
-  //  SquashAngle(z_residual(1));
 
   x_ = x_ + K * (z_residual);
   P_ = P_ - K * S * K.transpose();
@@ -355,18 +333,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
 
   int n_z = 3;
   VectorXd z = meas_package.raw_measurements_;
-  // create matrix for sigma points in measurement space
   MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
-  // mean predicted measurement
   VectorXd z_pred = VectorXd(n_z);
-  // measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z, n_z);
   MatrixXd R(n_z, n_z);
 
   Zsig = CalculateMeasurementSigmaPoints();
   z_pred = CalculatePredictedMeasurement(Zsig);
 
-  // calculate innovation covariance matrix S
   S.fill(0.0);
   R.fill(0.0);
   R(0, 0) = std_radr_ * std_radr_;
@@ -381,12 +355,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
   }
   S = S + R;
 
-  // Update state
-  // create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
 
   Tc.fill(0.0);
-  // // calculate cross correlation matrix
   for (int col_no = 0; col_no < Zsig.cols(); ++col_no)
   {
     VectorXd state_residual = Xsig_pred_.col(col_no) - x_;
@@ -411,7 +382,6 @@ Eigen::MatrixXd UKF::CalculateMeasurementSigmaPoints()
   int n_z = 3;
   MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
   Zsig.fill(0.0);
-  // transform sigma points into measurement space
   for (int col_no = 0; col_no < Xsig_pred_.cols(); ++col_no)
   {
     double px = Xsig_pred_(0, col_no);

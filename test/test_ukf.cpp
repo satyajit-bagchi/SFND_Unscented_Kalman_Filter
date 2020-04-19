@@ -25,11 +25,20 @@ TEST(TestUKF, TestInit)
   UKF ukf;
 }
 
+double Residual(double a, double b)
+{
+  return std::fabs(a - b);
+}
+
 TEST_F(UKFTest, TestCalculateWeights)
 {
   ukf.CalculateWeights();
   ASSERT_EQ(ukf.weights_.size(), 15);
-  ASSERT_EQ(ukf.weights_(1), ukf.weights_(2));
+  EXPECT_LE(Residual(ukf.weights_(0), -1.3333), 1e-3);
+  for (int index = 1; index < 15; ++index)
+  {
+    EXPECT_LE(Residual(ukf.weights_(index), 0.166667), 1e-3);
+  }
 }
 
 TEST_F(UKFTest, TestCreateAugmentedMatrix)

@@ -409,7 +409,7 @@ Eigen::MatrixXd UKF::CalculateMeasurementSigmaPoints()
     double vy = std::sin(phi) * v;
 
     Zsig(0, col_no) = std::sqrt(px * px + py * py);
-    Zsig(1, col_no) = std::atan(py / px);
+    Zsig(1, col_no) = std::atan2(py, px);
     Zsig(2, col_no) = (px * vx + py * vy) / (std::sqrt(px * px + py * py));
   }
   return Zsig;
